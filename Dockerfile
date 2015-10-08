@@ -1,6 +1,6 @@
 ################################################################################
-# zookeeper:1.0.0
-# Date: 9/27/2015
+# zookeeper:1.0.1
+# Date: 10/7/2015
 # Mesos Version: 0.23.0-1.0
 #
 # Description:
@@ -8,7 +8,7 @@
 # mesos-base container image.
 ################################################################################
 
-FROM mrbobbytables/mesos-base:1.0.0
+FROM mrbobbytables/mesos-base:1.0.1
 MAINTAINER Bob Killen / killen.bob@gmail.com / @mrbobbytables
 
 COPY ./skel /
