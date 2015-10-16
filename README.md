@@ -5,8 +5,8 @@ An Ubuntu based Zookeeper container, with the capability of logging to both stan
 
 ##### Version Information:
 
-* **Container Release:** 1.0.1
-* **Mesos:** 0.23.0
+* **Container Release:** 1.0.2
+* **Mesos:** 0.23.1-0.2.61.ubuntu1404
 * **Zookeeper:** 3.4.5+dfsg-1
 
 
