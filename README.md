@@ -6,7 +6,7 @@ An Ubuntu based Zookeeper container, with the capability of logging to both stan
 ##### Version Information:
 
 * **Container Release:** 1.1.0
-* **Mesos:** 0.24.1
+* **Mesos:** 0.24.1-0.2.35.ubuntu1404
 * **Zookeeper:** 3.4.5+dfsg-1
 
 
@@ -43,7 +43,7 @@ For production or development (`ENVIRONMENT` set to `production` or `development
 
 * `ZOOKEEPER_MYID` - The unique ID of the server that will be placed in the myid file. Valid values are 1-255.
 
-* `ZOOKEEPER_SERVER_###` - The zookeeper cluster peers. These represent the server.id in the zookeeper configuration file. The format should be the same as you would provide in the zooekeeper config manually - **ip:port:port**
+* `ZOOKEEPER_SERVER_###` - The zookeeper cluster peers. These represent the server.id in the zookeeper configuration file. The format should be the same as you would provide in the zookeeper config manually - **ip:port:port**
 
 
 Other useful, but not critical environment variables include `JAVA_OPTS`, `ZOOKEEPER_LOG_STDOUT_LAYOUT`, `ZOOKEEPER_LOG_STDOUT_THRESHOLD`, `ZOOKEEPER_LOG_FILE_LAYOUT`, and `ZOOKEEPER_LOG_STDFILE_THRESHOLD`.
@@ -86,22 +86,22 @@ zookeeper
 ### Modification and Anatomy of the Project
 
 **File Structure**
-The directory `skel` in the project root maps to the root of the filesystem once the container is built. Files and folders placed there will map to their corrisponding location within the container.
+The directory `skel` in the project root maps to the root of the file system once the container is built. Files and folders placed there will map to their corresponding location within the container.
 
 **Init**
-The init script (`./init.sh`) found at the root of the directory is the entry process for the container. It's role is to simply set specific environment variables and modify any subsiquently required configuration files.
+The init script (`./init.sh`) found at the root of the directory is the entry process for the container. It's role is to simply set specific environment variables and modify any subsequently required configuration files.
 
 **Zookeeper**
 All Zookeeper configuration files can be found at `/etc/zookeeper/conf/` with example configurations found in `/etc/zookeeper/conf_example/`. Logging is controlled through a combination of environment variable definitions and the `log4j.properties` file in the zookeeper conf directory. See the [zookeeper service](#zookeeper) section for more information.
 
 
 **Supervisord**
-All supervisord configs can be found in `/etc/supervisor/conf.d/`. Services by default will redirect their stdout to `/dev/fd/1` and stderr to `/dev/fd/2` allowing for service's console output to be displayed. Most applications can log to both stdout and their respecively specified log file.
+All supervisord configs can be found in `/etc/supervisor/conf.d/`. Services by default will redirect their stdout to `/dev/fd/1` and stderr to `/dev/fd/2` allowing for service's console output to be displayed. Most applications can log to both stdout and their respectively specified log file.
 
 In some cases (such as with zookeeper), it is possible to specify different logging levels and formats for each location.
 
 **Logstash-Forwarder**
-The Logstash-Forwarder binary and default configuration file can be found in `/skel/opt/logstash-forwarder`. It is ideal to bake the Logstash Server certificate into the base container at this location. If the certificate is called `logstash-forwarder.crt`, the default supplied Logstash-Forwarder config should not need to be modified, and the server setting may be passed through the `SERICE_LOGSTASH_FORWARDER_ADDRESS` environment variable.
+The Logstash-Forwarder binary and default configuration file can be found in `/skel/opt/logstash-forwarder`. It is ideal to bake the Logstash Server certificate into the base container at this location. If the certificate is called `logstash-forwarder.crt`, the default supplied Logstash-Forwarder config should not need to be modified, and the server setting may be passed through the `SERVICE_LOGSTASH_FORWARDER_ADDRESS` environment variable.
 
 In practice, the supplied Logstash-Forwarder config should be used as an example to produce one tailored to each deployment.
 
@@ -322,7 +322,7 @@ Redpill - Supervisor status monitor. Terminates the supervisor process if any sp
 
 -c | --cleanup    Optional path to cleanup script that should be executed upon exit.
 -h | --help       This help text.
--i | --inerval    Optional interval at which the service check is performed in seconds. (Default: 30)
+-i | --interval   Optional interval at which the service check is performed in seconds. (Default: 30)
 -s | --service    A comma delimited list of the supervisor service names that should be monitored.
 ```
 
@@ -334,4 +334,6 @@ Redpill - Supervisor status monitor. Terminates the supervisor process if any sp
 In the event of an issue, the `ENVIRONMENT` variable can be set to `debug`.  This will stop the container from shipping logs and prevent it from terminating if one of the services enters a failed state. It will also default the logging level for both stdout and the file to `DEBUG`.
 
 If the zookeeper registry needs to be explored directly, you can use the Zookeeper Cli (zkCli) located at `/usr/share/zookeeper/bin/zkCli.sh`. For more information on how to use the zkCli, please see the Zookeeper [Getting Started Guide](http://zookeeper.apache.org/doc/trunk/zookeeperStarted.html).
+
+
 

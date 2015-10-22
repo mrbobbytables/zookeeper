@@ -1,6 +1,6 @@
 ################################################################################
-# zookeeper:1.1.0
-# Date: 9/29/2015
+# zookeeper: 1.1.0
+# Date: 10/22/2015
 # Mesos Version: 0.24.1-0.2.35.ubuntu1404
 #
 # Description:
@@ -8,7 +8,9 @@
 # mesos-base container image.
 ################################################################################
 
+
 FROM mrbobbytables/mesos-base:1.1.0
+
 MAINTAINER Bob Killen / killen.bob@gmail.com / @mrbobbytables
 
 COPY ./skel /
