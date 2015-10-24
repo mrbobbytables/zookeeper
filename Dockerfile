@@ -1,15 +1,16 @@
 ################################################################################
-# zookeeper:1.0.2
-# Date: 10/16/2015
-# Mesos Version: 0.23.1-0.2.61.ubuntu1404
-# Zookeeper Version: 3.4.5+dfsg-1
+# zookeeper: 1.1.0
+# Date: 10/22/2015
+# Mesos Version: 0.24.1-0.2.35.ubuntu1404
 #
 # Description:
 # Zookeeper container for use with Mesos deployment. Version is tied to 
 # mesos-base container image.
 ################################################################################
 
-FROM mrbobbytables/mesos-base:1.0.2
+
+FROM mrbobbytables/mesos-base:1.1.0
+
 MAINTAINER Bob Killen / killen.bob@gmail.com / @mrbobbytables
 
 COPY ./skel /
