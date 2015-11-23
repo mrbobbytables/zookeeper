@@ -1,6 +1,6 @@
 ################################################################################
-# zookeeper: 1.1.0
-# Date: 10/22/2015
+# zookeeper: 1.1.1
+# Date: 11/23/2015
 # Mesos Version: 0.24.1-0.2.35.ubuntu1404
 #
 # Description:
@@ -9,7 +9,7 @@
 ################################################################################
 
 
-FROM mrbobbytables/mesos-base:1.1.0
+FROM mrbobbytables/mesos-base:1.1.2
 
 MAINTAINER Bob Killen / killen.bob@gmail.com / @mrbobbytables
 
