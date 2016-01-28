@@ -5,15 +5,18 @@ An Ubuntu based Zookeeper container, with the capability of logging to both stan
 
 ##### Version Information:
 
-* **Container Release:** 1.1.3
+* **Container Release:** 1.2.0
 * **Mesos:** 0.26.0-0.2.145.ubuntu1404
 * **Zookeeper:** 3.4.5+dfsg-1
 
 
 ##### Services Include:
 * **[Zookeeper](#zookeeper)** - A distributed and highly available configuration service. The 'heart' of what powers Mesos.
+* **[Consul-Template](#consul-template)** - An application that can populate configs from a consul service.
+* **[Logrotate](#logrotate)** - A script and application that aid in pruning log files.
 * **[Logstash-Forwarder](#logstash-forwarder)** - A lightweight log collector and shipper for use with [Logstash](https://www.elastic.co/products/logstash).
 * **[Redpill](#redpill)** - A bash script and healthcheck for supervisord managed services. It is capable of running cleanup scripts that should be executed upon container termination.
+* **[Rsyslog](#rsyslog)** - The system logging daemon.
 
 
 ---
@@ -26,8 +29,11 @@ An Ubuntu based Zookeeper container, with the capability of logging to both stan
 * [Important Environment Variables](#important-environment-variables)
 * [Service Configuration](#service-configuration)
  * [Zookeeper](#zookeeper)
+ * [Consul-Template](#consul-template)
+ * [Logrotate](#logrotate)
  * [Logstash-Forwarder](#logstash-forwarder)
  * [Redpill](#redpill)
+ * [Rsyslog](#rsyslog)
 * [Troubleshooting](#troubleshooting)
 
 ---
@@ -64,7 +70,8 @@ For more information regarding configuring Zookeper, please use the [Zookeeper A
 ---
 
 ### Example Run Command
-```
+
+```bash
 docker run -d \
 -e ENVIRONMENT=production \
 -e PARENT_HOST=$(hostname) \
@@ -125,10 +132,13 @@ In practice, the supplied Logstash-Forwarder config should be used as an example
 | `ZOOKEEPER_LOG_FILE_THRESHOLD`    |                                                         |
 | `ZOOKEEPER_LOG_STDOUT_LAYOUT`     | `standard`                                              |
 | `ZOOKEEPER_LOG_STDOUT_THRESHOLD`  |                                                         |
+| `SERVICE_CONSUL_TEMPLATE`         | `disabled`                                              |
+| `SERVICE_LOGROTATE`               | `disabled`                                              |
 | `SERVICE_LOGSTASH_FORWARDER`      |                                                         |
 | `SERVICE_LOGSTASH_FORWARDER_CONF` | `/opt/logstash-forwarder/zookeeper.conf`                |
 | `SERVICE_REDPILL`                 |                                                         |
 | `SERVICE_REDPILL_MONITOR`         | `zookeeper`                                             |
+| `SERVICE_RSYSLOG`                 | `disabled`                                              |
 
 
 ##### Description
@@ -155,6 +165,10 @@ In practice, the supplied Logstash-Forwarder config should be used as an example
 
 * `ZOOKEEPER_LOG_STDOUT_THRESHOLD`  The log level to be used for console output. (**Options:** `FATAL`, `ERROR`, `WARN`, `INFO`, `DEBUG`, `TRACE`, and `ALL`)
 
+* `SERVICE_CONSUL_TEMPLATE - * `SERVICE_CONSUL_TEMPLATE` - Enables or disables the consul-template service. If enabled, it will also enable `SERVICE_LOGROTATE` and `SERVICE_RSYSLOG` to handle logging. (**Options:** `enabled` or `disabled`)
+
+* `SERVICE_LOGROTATE` - Enables or disabled the Logrotate service. This is managed by `SERVICE_CONSUL_TEMPLATE`, but can be enabled/disabled manually. (**Options:** `enabled` or `disabled`)
+
 * `SERVICE_LOGSTASH_FORWARDER` - Enables or disables the Logstash-Forwarder service. Set automatically depending on the `ENVIRONMENT`. See the Environment section below.  (**Options:** `enabled` or `disabled`)
 
 * `SERVICE_LOGSTASH_FORWARDER_CONF` - The path to the logstash-forwarder configuration.
@@ -162,6 +176,8 @@ In practice, the supplied Logstash-Forwarder config should be used as an example
 * `SERVICE_REDPILL` - Enables or disables the Redpill service. Set automatically depending on the `ENVIRONMENT`. See the Environment section below.  (**Options:** `enabled` or `disabled`)
 
 * `SERVICE_REDPILL_MONITOR` - The name of the supervisord service(s) that the Redpill service check script should monitor.
+
+* `SERVICE_RSYSLOG` - Enables of disables the rsyslog service. This is managed by `SERVICE_CONSUL_TEMPLATE`, but can be enabled/disabled manually. (**Options:** `enabled` or `disabled`)
 
 
 ---
@@ -199,6 +215,9 @@ In practice, the supplied Logstash-Forwarder config should be used as an example
 | `ZOOKEEPER_LOG_STDOUT_THRESHOLD` | DEBUG       |
 | `SERVICE_LOGSTASH_FORWARDER`     | disabled    |
 | `SERVICE_REDPILL`                | disabled    |
+| `CONSUL_TEMPLATE_LOG_LEVEL`      | `debug` *   |
+
+\* Only set if `SERVICE_CONSUL_TEMPLATE` is set to `enabled`.
 
 
 ---
@@ -247,6 +266,81 @@ Zookeeper is a highly-available distributed configuration registry. Within the s
 * `ZOOKEEPER_DATADIR` - The path to the zookeeper data directory.
 
 * `SERVICE_ZOOKEEPER_CMD` - The command that is passed to supervisor. If overriding, must be an escaped python string expression. Please see the [Supervisord Command Documentation](http://supervisord.org/configuration.html#program-x-section-settings) for further information.
+
+
+---
+
+
+### Consul-Template
+
+Provides initial configuration of consul-template. Variables prefixed with `CONSUL_TEMPLATE_` will automatically be passed to the consul-template service at runtime, e.g. `CONSUL_TEMPLATE_SSL_CA_CERT=/etc/consul/certs/ca.crt` becomes `-ssl-ca-cert="/etc/consul/certs/ca.crt"`. If managing the application configuration is handled via file configs, no other variables must be passed at runtime.
+
+#### Consul-Template Environment Variables
+
+##### Defaults
+
+| **Variable**                  | **Default**                           |
+|-------------------------------|---------------------------------------|
+| `CONSUL_TEMPLATE_CONFIG`      | `/etc/consul/template/conf.d`         |
+| `CONSUL_TEMPLATE_SYSLOG`      | `true`                                |
+| `SERVICE_CONSUL_TEMPLATE`     |                                       |
+| `SERVICE_CONSUL_TEMPLATE_CMD` | `consul-template <CONSUL_TEMPLATE_*>` |
+
+
+---
+
+
+### Logrotate
+
+The logrotate script is a small simple script that will either call and execute logrotate on a given interval; or execute a supplied script. This is useful for applications that do not perform their own log cleanup.
+
+#### Logrotate Environment Variables
+
+##### Defaults
+
+| **Variable**                 | **Default**                           |
+|------------------------------|---------------------------------------|
+| `SERVICE_LOGROTATE`          |                                       |
+| `SERVICE_LOGROTATE_INTERVAL` | `3600` (set in script)                |
+| `SERVICE_LOGROTATE_CONF`     | `/etc/logrotate.conf` (set in script) |
+| `SERVICE_LOGROTATE_SCRIPT`   |                                       |
+| `SERVICE_LOGROTATE_FORCE`    |                                       |
+| `SERVICE_LOGROTATE_VERBOSE`  |                                       |
+| `SERVICE_LOGROTATE_DEBUG`    |                                       |
+| `SERVICE_LOGROTATE_CMD`      | `/opt/script/logrotate.sh <flags>`    |
+
+##### Description
+
+* `SERVICE_LOGROTATE` - Enables or disables the Logrotate service. Set automatically depending on the `ENVIRONMENT`. See the Environment section.  (**Options:** `enabled` or `disabled`)
+
+* `SERVICE_LOGROTATE_INTERVAL` - The time in seconds between run of either the logrotate command or the provided logrotate script. Default is set to `3600` or 1 hour in the script itself.
+
+* `SERVICE_LOGROTATE_CONFIG` - The path to the logrotate config file. If neither config or script is provided, it will default to `/etc/logrotate.conf`.
+
+* `SERVICE_LOGROTATE_SCRIPT` - A script that should be executed on the provided interval. Useful to do cleanup of logs for applications that already handle rotation, or if additional processing is required.
+
+* `SERVICE_LOGROTATE_FORCE` - If present, passes the 'force' command to logrotate. Will be ignored if a script is provided.
+
+* `SERVICE_LOGROTATE_VERBOSE` - If present, passes the 'verbose' command to logrotate. Will be ignored if a script is provided.
+
+* `SERVICE_LOGROTATE_DEBUG` - If present, passed the 'debug' command to logrotate. Will be ignored if a script is provided.
+
+* `SERVICE_LOGROTATE_CMD` - The command that is passed to supervisor. If overriding, must be an escaped python string expression. Please see the [Supervisord Command Documentation](http://supervisord.org/configuration.html#program-x-section-settings) for further information.
+
+
+##### Logrotate Script Help Text
+```
+root@ec58ca7459cb:/opt/scripts# ./logrotate.sh --help
+logrotate.sh - Small wrapper script for logrotate.
+-i | --interval     The interval in seconds that logrotate should run.
+-c | --config       Path to the logrotate config.
+-s | --script       A script to be executed in place of logrotate.
+-f | --force        Forces log rotation.
+-v | --verbose      Display verbose output.
+-d | --debug        Enable debugging, and implies verbose output. No state file changes.
+-h | --help         This usage text.
+```
+
 
 ---
 
@@ -325,6 +419,30 @@ Redpill - Supervisor status monitor. Terminates the supervisor process if any sp
 -i | --interval   Optional interval at which the service check is performed in seconds. (Default: 30)
 -s | --service    A comma delimited list of the supervisor service names that should be monitored.
 ```
+
+
+---
+
+
+### Rsyslog
+Rsyslog is a high performance log processing daemon. For any modifications to the config, it is best to edit the rsyslog configs directly (`/etc/rsyslog.conf` and `/etc/rsyslog.d/*`).
+
+##### Defaults
+
+| **Variable**                      | **Default**                                      |
+|-----------------------------------|--------------------------------------------------|
+| `SERVICE_RSYSLOG`                 | `disabled`                                       |
+| `SERVICE_RSYSLOG_CONF`            | `/etc/rsyslog.conf`                              |
+| `SERVICE_RSYSLOG_CMD`             | `/usr/sbin/rsyslogd -n -f $SERVICE_RSYSLOG_CONF` |
+
+##### Description
+
+* `SERVICE_RSYSLOG` - Enables or disables the rsyslog service. This will automatically be set depending on what other services are enabled. (**Options:** `enabled` or `disabled`)
+
+* `SERVICE_RSYSLOG_CONF` - The path to the rsyslog configuration file.
+
+* `SERVICE_RSYSLOG_CMD` -  The command that is passed to supervisor. If overriding, must be an escaped python string expression. Please see the [Supervisord Command Documentation](http://supervisord.org/configuration.html#program-x-section-settings) for further information.
+
 
 ---
 ---

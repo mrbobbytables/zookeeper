@@ -25,6 +25,7 @@ init_vars() {
   export ZOOKEEPER_LOG_FILE=${ZOOKEEPER_LOG_FILE:-zookeeper.log}
   export ZOOKEEPER_LOG_FILE_LAYOUT=${ZOOKEEPER_LOG_FILE_LAYOUT:-json}
 
+  export SERVICE_CONSUL_TEMPLATE=${SERVICE_CONSUL_TEMPLATE:-disabled}
   export SERVICE_LOGSTASH_FORWARDER_CONF=${SERVICE_LOGSTASH_FORWARDER_CONF:-/opt/logstash-forwarder/zookeeper.conf}
   export SERVICE_REDPILL_MONITOR=${SERVICE_REDPILL_MONITOR:-zookeeper}
   export SERVICE_ZOOKEEPER_CMD=${SERVICE_ZOOKEEPER_CMD:-"/usr/share/zookeeper/bin/zkServer.sh start-foreground"}
@@ -43,6 +44,10 @@ init_vars() {
       export ZOOKEEPER_LOG_FILE_THRESHOLD=${ZOOKEEPER_LOG_FILE_THRESHOLD:-DEBUG}
       export SERVICE_LOGSTASH_FORWARDER=${SERVICE_LOGSTASH_FORWARDER:-disabled}
       export SERVICE_REDPILL=${SERVICE_REDPILL:-disabled}
+      if [[ "$SERVICE_CONSUL_TEMPLATE" == "enabled" ]]; then
+        export SERVICE_LOGROTATE=${SERVICE_LOGROTATE:-disabled}
+        export SERVICE_RSYSLOG=${SERVICE_RSYSLOG:-enabled}
+      fi
       ;;
     local|*)
       export JAVA_OPTS=${JAVA_OPTS:-"-Xmx256m"}
@@ -53,6 +58,10 @@ init_vars() {
       ;;
   esac
 
+  if [[ "$SERVICE_CONSUL_TEMPLATE" == "enabled" ]]; then
+    export SERVICE_LOGROTATE=${SERVICE_LOGROTATE:-enabled}
+    export SERVICE_RSYSLOG=${SERVICE_RSYSLOG:-enabled}
+  fi
 }
 
 
@@ -99,7 +108,7 @@ config_zookeeper() {
   done
 
   #the zookeeper start script (zkServer) looks to see if SERVER_JVMFLAGS is set and appends it to the java start command.
-  export SERVER_JVMFLAGS="${jvm_opts[@]}"
+  export SERVER_JVMFLAGS="${jvm_opts[*]}"
 
   
   sed -e "s|^dataDir=.*|dataDir=$ZOOKEEPER_DATADIR|g" -i /etc/zookeeper/conf/zoo.cfg
@@ -125,14 +134,17 @@ main() {
 
   init_vars
 
-  config_zookeeper
-
   echo "[$(date)][App-name] $APP_NAME"
   echo "[$(date)][Environment] $ENVIRONMENT"
 
+  __config_service_consul_template
+  __config_service_logrotate
   __config_service_logstash_forwarder
   __config_service_redpill
-  
+  __config_service_rsyslog
+
+  config_zookeeper
+
   echo "[$(date)][Zookeeper][Myid] $ZOOKEEPER_MYID"
   echo "[$(date)][Zookeeper][Start-Command] $SERVICE_ZOOKEEPER_CMD"
 
