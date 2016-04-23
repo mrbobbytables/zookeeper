@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 ########## Zookeeper ##########
@@ -93,7 +94,7 @@ config_zookeeper() {
   export ZOOKEEPER_MYID=${ZOOKEEPER_MYID:-1}
   export ZOOKEEPER_DATADIR=${ZOOKEEPER_DATADIR:-/var/lib/zookeeper}
 
-  echo "$ZOOKEEPER_MYID": > "$ZOOKEEPER_DATADIR/myid"
+  echo "$ZOOKEEPER_MYID" > "$ZOOKEEPER_DATADIR/myid"
 
   jvm_opts=( "-Dlog4j.configuration=file:/etc/zookeeper/conf/log4j.properties"
              "-Dlog.stdout.layout=$log_stdout_layout"
