@@ -1,3 +1,6 @@
+2016-05-13 - 1.2.1:
+ - fix isses in init
+
 2016-01-22 - 1.2.0:
  - Use new Ubuntu base image.
  - Consul template and envconsul support added
